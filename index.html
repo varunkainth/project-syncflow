@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES Encryption/Decryption Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .key-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .key-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .key-input-wrapper {
+            position: relative;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .toggle-key {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: #495057;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #218838;
+        }
+
+        .output-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+        }
+
+        .output-section h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .output-text {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #c3e6cb;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔐 AES Encryption Tool</h1>
+        <p class="subtitle">Secure encryption and decryption with AES-256</p>
+
+        <div class="key-section">
+            <label for="encryptionKey">Encryption Key</label>
+            <div class="key-input-wrapper">
+                <input type="password" id="encryptionKey" placeholder="Enter your secret key">
+                <button class="toggle-key" onclick="toggleKeyVisibility()">👁️</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('encrypt')">
+                🔒 Encrypt
+            </div>
+            <div class="tab" onclick="switchTab('decrypt')">
+                🔓 Decrypt
+            </div>
+        </div>
+
+        <div id="encrypt-tab" class="tab-content active">
+            <div class="input-group">
+                <label for="plaintext">Data to Encrypt (JSON or Text)</label>
+                <textarea id="plaintext" placeholder='Enter text or JSON, e.g., {"name": "John", "age": 30}'></textarea>
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" onclick="encryptData()">🔒 Encrypt</button>
+                <button class="btn-secondary" onclick="clearEncrypt()">Clear</button>
+            </div>
+            <div id="encrypt-output"></div>
+        </div>
+
+        <div id="decrypt-tab" class="tab-content">
+            <div class="input-group">
+                <label for="ciphertext">Encrypted Text</label>
+                <textarea id="ciphertext" placeholder="Paste encrypted text here (e.g., U2FsdGVkX1...)"></textarea>
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" onclick="decryptData()">🔓 Decrypt</button>
+                <button class="btn-secondary" onclick="clearDecrypt()">Clear</button>
+            </div>
+            <div id="decrypt-output"></div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            if (tab === 'encrypt') {
+                tabs[0].classList.add('active');
+                document.getElementById('encrypt-tab').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('decrypt-tab').classList.add('active');
+            }
+        }
+
+        function toggleKeyVisibility() {
+            const keyInput = document.getElementById('encryptionKey');
+            const toggleBtn = document.querySelector('.toggle-key');
+
+            if (keyInput.type === 'password') {
+                keyInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                keyInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        }
+
+        function encryptData() {
+            const key = document.getElementById('encryptionKey').value;
+            const plaintext = document.getElementById('plaintext').value;
+            const outputDiv = document.getElementById('encrypt-output');
+
+            if (!key) {
+                outputDiv.innerHTML = '<div class="error message">⚠️ Please enter an encryption key</div>';
+                return;
+            }
+
+            if (!plaintext) {
+                outputDiv.innerHTML = '<div class="error message">⚠️ Please enter data to encrypt</div>';
+                return;
+            }
+
+            try {
+                let dataToEncrypt = plaintext;
+
+                // Try to parse as JSON
+                try {
+                    const parsed = JSON.parse(plaintext);
+                    dataToEncrypt = JSON.stringify(parsed);
+                } catch (e) {
+                    // Not JSON, treat as plain text
+                    dataToEncrypt = JSON.stringify(plaintext);
+                }
+
+                const encrypted = CryptoJS.AES.encrypt(dataToEncrypt, key).toString();
+
+                outputDiv.innerHTML = `
+                    <div class="success message">✅ Encryption successful!</div>
+                    <div class="output-section">
+                        <h3>Encrypted Output:</h3>
+                        <div class="output-text">${encrypted}</div>
+                        <button class="btn-copy" style="margin-top: 10px; width: 100%;" onclick="copyToClipboard('${encrypted.replace(/'/g, "\\'")}')">
+                            📋 Copy to Clipboard
+                        </button>
+                    </div>
+                `;
+            } catch (error) {
+                outputDiv.innerHTML = `<div class="error message">❌ Encryption failed: ${error.message}</div>`;
+            }
+        }
+
+        function decryptData() {
+            const key = document.getElementById('encryptionKey').value;
+            const ciphertext = document.getElementById('ciphertext').value;
+            const outputDiv = document.getElementById('decrypt-output');
+
+            if (!key) {
+                outputDiv.innerHTML = '<div class="error message">⚠️ Please enter an encryption key</div>';
+                return;
+            }
+
+            if (!ciphertext) {
+                outputDiv.innerHTML = '<div class="error message">⚠️ Please enter encrypted text</div>';
+                return;
+            }
+
+            try {
+                const bytes = CryptoJS.AES.decrypt(ciphertext.trim(), key);
+                const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+
+                if (!decryptedData) {
+                    outputDiv.innerHTML = `
+                        <div class="error message">
+                            ❌ Decryption failed: Empty result<br>
+                            <small>This usually means the encryption key is incorrect</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let displayData;
+                try {
+                    const parsed = JSON.parse(decryptedData);
+                    displayData = JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    displayData = decryptedData;
+                }
+
+                outputDiv.innerHTML = `
+                    <div class="success message">✅ Decryption successful!</div>
+                    <div class="output-section">
+                        <h3>Decrypted Output:</h3>
+                        <div class="output-text"><pre>${displayData}</pre></div>
+                        <button class="btn-copy" style="margin-top: 10px; width: 100%;" onclick="copyToClipboard(\`${displayData.replace(/`/g, '\\`')}\`)">
+                            📋 Copy to Clipboard
+                        </button>
+                    </div>
+                `;
+            } catch (error) {
+                outputDiv.innerHTML = `<div class="error message">❌ Decryption failed: ${error.message}</div>`;
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Copied to clipboard!');
+            }).catch(err => {
+                alert('❌ Failed to copy: ' + err);
+            });
+        }
+
+        function clearEncrypt() {
+            document.getElementById('plaintext').value = '';
+            document.getElementById('encrypt-output').innerHTML = '';
+        }
+
+        function clearDecrypt() {
+            document.getElementById('ciphertext').value = '';
+            document.getElementById('decrypt-output').innerHTML = '';
+        }
+    </script>
+</body>
+
+</html>

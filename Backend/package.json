@@ -1,0 +1,45 @@
+{
+  "name": "antigravity",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "dev": "bun run --watch src/index.ts",
+    "db:push": "bunx drizzle-kit push",
+    "biome:check": "biome check",
+    "biome:fix": "biome fix"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.7",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/bun": "^1.3.3",
+    "@types/crypto-js": "^4.2.2",
+    "@types/nodemailer": "^7.0.4",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.7"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.1.5",
+    "@scalar/hono-api-reference": "^0.9.25",
+    "@upstash/redis": "^1.35.7",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "drizzle-orm": "^0.44.7",
+    "googleapis": "^166.0.0",
+    "hono": "^4.10.7",
+    "ical-generator": "^10.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^7.0.11",
+    "otplib": "^12.0.1",
+    "postgres": "^3.4.7",
+    "zod": "^4.1.13"
+  }
+}

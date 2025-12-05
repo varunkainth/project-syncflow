@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Environment variables (CRITICAL: Never commit these)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+
+# Exception: Commit the example file if you have one
+!example.env
+!.env.example
+
+# Build outputs (if you compile TS to JS)
+dist/
+build/
+out/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDE / Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+coverage/
+
+# Database (if using SQLite locally)
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Bun specific
+# Note: It is recommended to COMMIT bun.lockb, so it is not listed here.
+# If you specifically want to ignore it, uncomment the line below:
+bun.lockb
+
