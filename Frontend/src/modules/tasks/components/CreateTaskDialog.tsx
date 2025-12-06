@@ -48,6 +48,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createTaskSchema, type CreateTaskFormValues } from "../schema";
 import { useCreateTask } from "../hooks/useTasks";
 import { useProjectMembers } from "../../projects/hooks/useProjects";
+import { getApiError } from "@/utils/errorHandler";
+import { RecurrenceSelector, type RecurrenceRule } from "./RecurrenceSelector";
 
 interface CreateTaskDialogProps {
     projectId: string;
@@ -56,6 +58,7 @@ interface CreateTaskDialogProps {
 export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
     const [open, setOpen] = useState(false);
     const [assigneeOpen, setAssigneeOpen] = useState(false);
+    const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(null);
     const createTask = useCreateTask(projectId);
     const { data: members = [] } = useProjectMembers(projectId);
 
@@ -72,16 +75,24 @@ export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
     });
 
     function onSubmit(data: CreateTaskFormValues) {
-        createTask.mutate(data, {
+        // Include recurrence data if set
+        const taskData = {
+            ...data,
+            ...(recurrenceRule ? {
+                recurrenceRule: JSON.stringify(recurrenceRule),
+                recurrenceEndDate: recurrenceRule.endDate,
+            } : {}),
+        };
+
+        createTask.mutate(taskData as any, {
             onSuccess: () => {
-                toast.success("Task created successfully");
+                toast.success(recurrenceRule ? "Recurring task created successfully" : "Task created successfully");
                 setOpen(false);
                 form.reset();
+                setRecurrenceRule(null);
             },
             onError: (error) => {
-                toast.error("Failed to create task", {
-                    description: error.message,
-                });
+                toast.error(getApiError(error, "create task"));
             },
         });
     }
@@ -96,7 +107,7 @@ export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
                     New Task
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Create Task</DialogTitle>
                     <DialogDescription>
@@ -286,6 +297,15 @@ export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
                                 )}
                             />
                         </div>
+
+                        {/* Recurrence Section */}
+                        <div className="space-y-2">
+                            <RecurrenceSelector
+                                value={recurrenceRule}
+                                onChange={setRecurrenceRule}
+                            />
+                        </div>
+
                         <div className="flex justify-end space-x-2 pt-4">
                             <Button
                                 type="button"

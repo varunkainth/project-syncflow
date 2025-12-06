@@ -4,8 +4,10 @@ import { eq, and, sql } from "drizzle-orm";
 import { sendEmail } from "../notifications/email.service";
 import { taskAssignedTemplate } from "../notifications/templates";
 import { AnalyticsService } from "../analytics/service";
+import { CacheService } from "../../common/cache.service";
 
 const analyticsService = new AnalyticsService();
+const cacheService = new CacheService();
 
 export class TaskService {
     async createTask(creatorId: string, data: { projectId: string; title: string; description?: string; assigneeId?: string; dueDate?: string; priority?: string }) {
@@ -17,7 +19,7 @@ export class TaskService {
             assigneeId: data.assigneeId,
             dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
             priority: data.priority,
-        }).returning();
+        } as any).returning();
 
         if (!task) {
             throw new Error("Failed to create task");
@@ -61,9 +63,6 @@ export class TaskService {
         return task;
     }
 
-
-    // updateTask replaced below
-
     async addComment(userId: string, taskId: string, content: string, parentId?: string) {
         const task = await this.getTaskById(taskId, userId);
         if (!task) throw new Error("Task not found or access denied");
@@ -77,31 +76,27 @@ export class TaskService {
 
         await analyticsService.logActivity(userId, "comment_task", taskId, "task", { contentSnippet: content.substring(0, 20) });
 
-        if (!comment) {
-            throw new Error("Failed to add comment");
-        }
-
-        // Get commenter details
-        const commenter = await db.query.users.findFirst({
-            where: eq(users.id, userId),
-            columns: { name: true }
-        });
-
-        // Send notifications to task creator and assignee (but not to the commenter themselves)
+        // Initialize variables for notification
+        const notificationRecipients = new Set<string>();
         const { NotificationService } = await import("../notifications/service");
         const notificationService = new NotificationService();
         const taskLink = `/projects/${task.projectId}/tasks`;
-        const notificationRecipients = new Set<string>();
+
+        // Add assignee if not the commenter
+        if (task.assigneeId && task.assigneeId !== userId) {
+            notificationRecipients.add(task.assigneeId);
+        }
 
         // Add creator if not the commenter
         if (task.creatorId && task.creatorId !== userId) {
             notificationRecipients.add(task.creatorId);
         }
 
-        // Add assignee if not the commenter
-        if (task.assigneeId && task.assigneeId !== userId) {
-            notificationRecipients.add(task.assigneeId);
-        }
+        // Fetch commenter details for the notification message
+        const commenter = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: { name: true }
+        });
 
         // Send notifications
         for (const recipientId of notificationRecipients) {
@@ -126,6 +121,8 @@ export class TaskService {
             }
         });
 
+        await cacheService.invalidate(`task:${taskId}`);
+
         return commentWithUser;
     }
 
@@ -148,7 +145,7 @@ export class TaskService {
             .where(eq(comments.id, commentId))
             .returning();
 
-        // Return with user for consistency if needed, or just updated fields
+        await cacheService.invalidate(`task:${comment.taskId}`);
         return updated;
     }
 
@@ -161,6 +158,7 @@ export class TaskService {
         if (comment.userId !== userId) throw new Error("Unauthorized");
 
         await db.delete(comments).where(eq(comments.id, commentId));
+        await cacheService.invalidate(`task:${comment.taskId}`);
         return true;
     }
 
@@ -169,6 +167,7 @@ export class TaskService {
             taskId,
             title,
         }).returning();
+        await cacheService.invalidate(`task:${taskId}`);
         return subTask;
     }
 
@@ -181,32 +180,95 @@ export class TaskService {
         }).returning();
 
         await analyticsService.logActivity(userId, "upload_attachment", taskId, "task", { filename });
+        await cacheService.invalidate(`task:${taskId}`);
 
         return attachment;
     }
 
-    async getTaskById(taskId: string, userId?: string) {
-        const task = await db.query.tasks.findFirst({
-            where: eq(tasks.id, taskId),
-            with: {
-                assignee: {
-                    columns: { id: true, name: true, email: true, avatarUrl: true }
-                },
-                creator: {
-                    columns: { id: true, name: true, email: true, avatarUrl: true }
-                },
-                comments: {
-                    with: {
-                        user: {
-                            columns: { id: true, name: true, avatarUrl: true }
-                        }
-                    },
-                    orderBy: (comments, { desc }) => [desc(comments.createdAt)]
-                },
-                subTasks: true,
-                attachments: true,
-            }
+    async removeAttachment(userId: string, taskId: string, attachmentId: string) {
+        // Find attachment
+        const attachment = await db.query.attachments.findFirst({
+            where: and(
+                eq(attachments.id, attachmentId),
+                eq(attachments.taskId, taskId)
+            )
         });
+
+        if (!attachment) throw new Error("Attachment not found");
+
+        // Check internal permissions
+        let canDelete = attachment.uploaderId === userId;
+
+        if (!canDelete) {
+            const task = await db.query.tasks.findFirst({
+                where: eq(tasks.id, taskId),
+            });
+
+            if (task && task.creatorId === userId) {
+                canDelete = true;
+            }
+
+            if (!canDelete && task) {
+                // Check project role
+                const member = await db.query.projectMembers.findFirst({
+                    where: and(
+                        eq(projectMembers.projectId, task.projectId),
+                        eq(projectMembers.userId, userId)
+                    ),
+                    with: { role: true }
+                });
+
+                if (member) {
+                    const roleName = member.role.name.toLowerCase();
+                    if (['owner', 'admin', 'project_manager'].includes(roleName)) {
+                        canDelete = true;
+                    }
+                }
+            }
+        }
+
+        if (!canDelete) {
+            throw new Error("Unauthorized to delete this attachment");
+        }
+
+        await db.delete(attachments).where(eq(attachments.id, attachmentId));
+        await analyticsService.logActivity(userId, "delete_attachment", taskId, "task", { filename: attachment.filename });
+        await cacheService.invalidate(`task:${taskId}`);
+
+        return true;
+    }
+
+    async getTaskById(taskId: string, userId?: string) {
+        const cacheKey = `task:${taskId}`;
+        let task = await cacheService.get(cacheKey) as any;
+
+        if (!task) {
+            task = await db.query.tasks.findFirst({
+                where: eq(tasks.id, taskId),
+                with: {
+                    assignee: {
+                        columns: { id: true, name: true, email: true, avatarUrl: true }
+                    },
+                    creator: {
+                        columns: { id: true, name: true, email: true, avatarUrl: true }
+                    },
+                    comments: {
+                        with: {
+                            user: {
+                                columns: { id: true, name: true, avatarUrl: true }
+                            }
+                        },
+                        orderBy: (comments, { desc }) => [desc(comments.createdAt)]
+                    },
+                    subTasks: true,
+                    attachments: true,
+                }
+            });
+
+            if (task) {
+                await cacheService.set(cacheKey, task);
+            }
+        }
 
         if (!task) return null;
 
@@ -227,8 +289,6 @@ export class TaskService {
     }
 
     async updateTask(taskId: string, userId: string, data: Partial<typeof tasks.$inferInsert>) {
-        const { hasHigherRole, ROLE_HIERARCHY } = await import("../rbac/roleHierarchy");
-
         const task = await this.getTaskById(taskId, userId);
         if (!task) throw new Error("Task not found or access denied");
 
@@ -317,6 +377,8 @@ export class TaskService {
             await analyticsService.logActivity(userId, "complete_task", taskId, "task", { title: task.title });
         }
 
+        await cacheService.invalidate(`task:${taskId}`);
+
         return updatedTask;
     }
 
@@ -331,6 +393,7 @@ export class TaskService {
         await db.delete(tasks).where(eq(tasks.id, taskId));
 
         await analyticsService.logActivity(userId, "delete_task", taskId, "task", "Task deleted");
+        await cacheService.invalidate(`task:${taskId}`);
         return true;
     }
 
@@ -380,8 +443,6 @@ export class TaskService {
         }
 
         if (filters.query) {
-            // Full-text search using to_tsvector and plainto_tsquery
-            // We search in title and description
             conditions.push(sql`
                 to_tsvector('english', ${tasks.title} || ' ' || coalesce(${tasks.description}, '')) @@ plainto_tsquery('english', ${filters.query})
             `);
@@ -440,7 +501,7 @@ export class TaskService {
                 },
             },
             orderBy: (tasks, { asc, desc }) => [
-                asc(tasks.dueDate), // Due soonest first (nulls last)
+                asc(tasks.dueDate),
                 desc(tasks.createdAt),
             ],
         });

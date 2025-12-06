@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { encryptPayload, decryptPayload } from "@/utils/encryption";
-import type { CreateProjectFormValues, Project } from "../schema";
+import type { CreateProjectFormValues, Project, Attachment } from "../schema";
 
 export function useProjects() {
     return useQuery({
@@ -275,6 +275,51 @@ export function useDeclineInvitation() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["invitations"] });
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        },
+    });
+}
+
+export function useProjectAttachments(projectId: string) {
+    return useQuery({
+        queryKey: ["projects", projectId, "attachments"],
+        queryFn: async () => {
+            const response = await api.get(`/projects/${projectId}/attachments`);
+            const decryptedData = decryptPayload(response.data.data);
+            return decryptedData.attachments as Attachment[];
+        },
+        enabled: !!projectId,
+    });
+}
+
+export function useUploadProjectAttachment(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (file: File) => {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await api.post(`/projects/${projectId}/attachments`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            const decryptedData = decryptPayload(response.data.data);
+            return decryptedData.attachment as Attachment;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects", projectId, "attachments"] });
+        },
+    });
+}
+
+export function useDeleteProjectAttachment(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (attachmentId: string) => {
+            await api.delete(`/projects/${projectId}/attachments/${attachmentId}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["projects", projectId, "attachments"] });
         },
     });
 }

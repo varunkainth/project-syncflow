@@ -114,14 +114,14 @@ export function DashboardPage() {
     ];
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
+        <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-6 md:p-8 pt-4 sm:pt-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
                         Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
                     </h2>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                         Here's what's happening with your projects.
                     </p>
                 </div>
@@ -129,7 +129,7 @@ export function DashboardPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
                 {stats.map((stat, index) => (
                     <Card key={index}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -172,7 +172,7 @@ export function DashboardPage() {
             )}
 
             {/* Main Content Grid */}
-            <div className="grid gap-6 lg:grid-cols-7">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-7">
                 {/* My Tasks */}
                 <Card className="lg:col-span-4">
                     <CardHeader className="flex flex-row items-center justify-between">

@@ -243,3 +243,57 @@ export const getInvitationDetails = async (c: Context) => {
         return c.json({ error: error.message }, 400);
     }
 };
+
+const { UploadService } = await import("../upload/service");
+const uploadService = new UploadService();
+
+export const uploadAttachment = async (c: Context) => {
+    const user = c.get("user");
+    const projectId = c.req.param("id");
+
+    const body = await c.req.parseBody();
+    const file = body['file'];
+
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    if (!file || !(file instanceof File)) {
+        return c.json({ error: "No file provided" }, 400);
+    }
+
+    try {
+        const { url, filename } = await uploadService.uploadFile(file, "project-attachments");
+        const attachment = await projectService.addAttachment(projectId, user.id, url, filename);
+        return jsonEncrypted(c, { attachment });
+    } catch (error: any) {
+        return c.json({ error: error.message }, 400);
+    }
+};
+
+export const deleteAttachment = async (c: Context) => {
+    const user = c.get("user");
+    const projectId = c.req.param("id");
+    const attachmentId = c.req.param("attachmentId");
+
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    try {
+        await projectService.removeAttachment(projectId, user.id, attachmentId);
+        return c.json({ message: "Attachment deleted" });
+    } catch (error: any) {
+        return c.json({ error: error.message }, 400);
+    }
+};
+
+export const getAttachments = async (c: Context) => {
+    const user = c.get("user");
+    const projectId = c.req.param("id");
+
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    try {
+        const attachments = await projectService.getAttachments(projectId, user.id);
+        return jsonEncrypted(c, { attachments });
+    } catch (error: any) {
+        return c.json({ error: error.message }, 400);
+    }
+};

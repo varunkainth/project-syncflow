@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { TaskService } from "./service";
 import { createTaskSchema, updateTaskSchema, createCommentSchema, createSubTaskSchema } from "./schema";
-import { uploadToCloudinary } from "../../utils/cloudinary";
+
 import { jsonEncrypted } from "../../middleware/encryption";
 
 const taskService = new TaskService();
@@ -159,12 +159,14 @@ export const addSubTask = async (c: Context) => {
     }
 };
 
+const { UploadService } = await import("../upload/service");
+const uploadService = new UploadService();
+
 export const uploadAttachment = async (c: Context) => {
     const taskId = c.req.param("id");
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    // File upload handling in Hono
     const body = await c.req.parseBody();
     const file = body["file"];
 
@@ -173,23 +175,39 @@ export const uploadAttachment = async (c: Context) => {
     }
 
     try {
-        // We need to save file to temp or pass stream to cloudinary
-        // Cloudinary uploader.upload accepts path. 
-        // We can write to temp file first.
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const tempPath = `./temp/${file.name}`;
-        await Bun.write(tempPath, buffer); // Bun specific
-
-        const url = await uploadToCloudinary(tempPath);
-
-        // Cleanup temp file
-        // await unlink(tempPath); // TODO: Implement cleanup
-
-        const attachment = await taskService.addAttachment(user.id, taskId, url, file.name);
+        const { url, filename } = await uploadService.uploadFile(file, "task-attachments");
+        const attachment = await taskService.addAttachment(user.id, taskId, url, filename);
         return jsonEncrypted(c, { attachment }, 201);
     } catch (error: any) {
         return c.json({ error: error.message }, 500);
+    }
+};
+
+export const deleteAttachment = async (c: Context) => {
+    const taskId = c.req.param("id");
+    const attachmentId = c.req.param("attachmentId");
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    try {
+        await taskService.removeAttachment(user.id, taskId, attachmentId);
+        return c.json({ message: "Attachment deleted" });
+    } catch (error: any) {
+        return c.json({ error: error.message }, 400);
+    }
+};
+
+export const getAttachments = async (c: Context) => {
+    const taskId = c.req.param("id");
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    try {
+        const task = await taskService.getTaskById(taskId, user.id);
+        if (!task) return c.json({ error: "Task not found" }, 404);
+        return jsonEncrypted(c, { attachments: task.attachments });
+    } catch (error: any) {
+        return c.json({ error: error.message }, 400);
     }
 };
 

@@ -1,5 +1,5 @@
 import { db } from "../../db/index";
-import { users, sessions, refreshTokens } from "../../db/schema";
+import { users, sessions, refreshTokens, projects, projectMembers, tasks, comments, subTasks, attachments } from "../../db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -305,6 +305,54 @@ export class AuthService {
                 updatedAt: new Date(),
             })
             .where(eq(users.id, user.id));
+
+        return true;
+    }
+
+
+    async deleteAccount(userId: string) {
+        // 1. Delete refresh tokens
+        await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
+
+        // 2. Delete project memberships
+        await db.delete(projectMembers).where(eq(projectMembers.userId, userId));
+
+        // 3. Handle owned projects
+        const userProjects = await db.select().from(projects).where(eq(projects.ownerId, userId));
+
+        for (const project of userProjects) {
+            // Delete everything related to the project
+            // Tasks
+            const projectTasks = await db.select().from(tasks).where(eq(tasks.projectId, project.id));
+            for (const task of projectTasks) {
+                await db.delete(subTasks).where(eq(subTasks.taskId, task.id));
+                await db.delete(comments).where(eq(comments.taskId, task.id));
+                await db.delete(attachments).where(eq(attachments.taskId, task.id));
+            }
+            await db.delete(tasks).where(eq(tasks.projectId, project.id));
+
+            // Project Members
+            await db.delete(projectMembers).where(eq(projectMembers.projectId, project.id));
+
+            // Delete Project
+            await db.delete(projects).where(eq(projects.id, project.id));
+        }
+
+        // 4. Delete tasks created by user in other projects (to satisfy FK constraints)
+        // Note: This is destructive but required since creatorId is not null
+        const userCreatedTasks = await db.select().from(tasks).where(eq(tasks.creatorId, userId));
+        for (const task of userCreatedTasks) {
+            await db.delete(subTasks).where(eq(subTasks.taskId, task.id));
+            await db.delete(comments).where(eq(comments.taskId, task.id));
+            await db.delete(attachments).where(eq(attachments.taskId, task.id));
+            await db.delete(tasks).where(eq(tasks.id, task.id));
+        }
+
+        // 5. Delete comments made by user
+        await db.delete(comments).where(eq(comments.userId, userId));
+
+        // 6. Delete user
+        await db.delete(users).where(eq(users.id, userId));
 
         return true;
     }

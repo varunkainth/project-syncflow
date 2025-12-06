@@ -9,10 +9,56 @@ export const getICal = async (c: Context) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     try {
-        const icalString = await calendarService.generateICal(user.id);
+        const projectId = c.req.query("projectId");
+        const icalString = await calendarService.generateICal(user.id, projectId);
         c.header("Content-Type", "text/calendar; charset=utf-8");
         c.header("Content-Disposition", 'attachment; filename="tasks.ics"');
         return c.body(icalString);
+    } catch (error: any) {
+        return c.json({ error: error.message }, 400);
+    }
+};
+
+export const getTaskICal = async (c: Context) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    try {
+        const taskId = c.req.param("taskId");
+        if (!taskId) {
+            return c.json({ error: "Task ID required" }, 400);
+        }
+
+        const { icalString, filename } = await calendarService.generateSingleTaskICal(taskId);
+        c.header("Content-Type", "text/calendar; charset=utf-8");
+        c.header("Content-Disposition", `attachment; filename="${filename}"`);
+        return c.body(icalString);
+    } catch (error: any) {
+        return c.json({ error: error.message }, 400);
+    }
+};
+
+export const getTasksForDateRange = async (c: Context) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    try {
+        const startDate = c.req.query("startDate");
+        const endDate = c.req.query("endDate");
+        const projectId = c.req.query("projectId");
+
+        if (!startDate || !endDate) {
+            return c.json({ error: "startDate and endDate are required" }, 400);
+        }
+
+        const tasks = await calendarService.getTasksForDateRange(
+            user.id,
+            new Date(startDate),
+            new Date(endDate),
+            projectId
+        );
+
+        return jsonEncrypted(c, { tasks });
     } catch (error: any) {
         return c.json({ error: error.message }, 400);
     }

@@ -22,6 +22,54 @@ calendar.openapi(
     calendarController.getICal
 );
 
+// Single task iCal export
+calendar.openapi(
+    createRoute({
+        method: "get",
+        path: "/ical/tasks/:taskId",
+        tags: ["Calendar"],
+        responses: {
+            200: {
+                content: {
+                    "text/calendar": {
+                        schema: z.string(),
+                    },
+                },
+                description: "iCal file for single task",
+            },
+        },
+    }),
+    calendarController.getTaskICal
+);
+
+calendar.openapi(
+    createRoute({
+        method: "get",
+        path: "/tasks",
+        tags: ["Calendar"],
+        request: {
+            query: z.object({
+                startDate: z.string().describe("Start date in ISO format"),
+                endDate: z.string().describe("End date in ISO format"),
+                projectId: z.string().optional().describe("Filter by project ID"),
+            }),
+        },
+        responses: {
+            200: {
+                content: {
+                    "application/json": {
+                        schema: z.object({
+                            tasks: z.array(z.any()),
+                        }),
+                    },
+                },
+                description: "Tasks for the date range",
+            },
+        },
+    }),
+    calendarController.getTasksForDateRange
+);
+
 calendar.openapi(
     createRoute({
         method: "get",
@@ -70,3 +118,4 @@ calendar.openapi(
 );
 
 export default calendar;
+

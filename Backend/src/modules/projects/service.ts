@@ -1,11 +1,13 @@
 import { db } from "../../db/index";
-import { projects, projectMembers, users, roles, permissions, rolePermissions, tasks, projectInviteLinks, activityLogs } from "../../db/schema";
+import { projects, projectMembers, users, roles, permissions, rolePermissions, tasks, projectInviteLinks, activityLogs, attachments } from "../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { sendEmail } from "../notifications/email.service";
 import { projectInviteTemplate } from "../notifications/templates";
 import { AnalyticsService } from "../analytics/service";
+import { CacheService } from "../../common/cache.service";
 
 const analyticsService = new AnalyticsService();
+const cacheService = new CacheService();
 
 export class ProjectService {
     async createProject(userId: string, name: string, description?: string) {
@@ -63,10 +65,19 @@ export class ProjectService {
         // Log activity
         await analyticsService.logActivity(userId, "create_project", project.id, "project", JSON.stringify({ name }));
 
+        // Invalidate user's project list cache
+        await cacheService.invalidatePattern(`projects:${userId}`);
+
         return project;
     }
 
     async getProjects(userId: string) {
+        const cacheKey = `projects:${userId}`;
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+            return cached as any[]; // Return cached data
+        }
+
         // Get projects owned by user
         const ownedProjects = await db.query.projects.findMany({
             where: eq(projects.ownerId, userId),
@@ -89,7 +100,12 @@ export class ProjectService {
             .filter(p => p.ownerId !== userId); // Exclude owned projects (already in ownedProjects)
 
         // Combine and return unique projects
-        return [...ownedProjects, ...memberProjects];
+        const result = [...ownedProjects, ...memberProjects];
+
+        // Cache the result
+        await cacheService.set(cacheKey, result);
+
+        return result;
     }
 
     async getProjectById(projectId: string, userId: string) {
@@ -173,6 +189,9 @@ export class ProjectService {
         await db.delete(projects).where(eq(projects.id, projectId));
 
         await analyticsService.logActivity(userId, "delete_project", projectId, "project", "Project deleted");
+
+        // Invalidate cache
+        await cacheService.invalidatePattern(`projects:${userId}`);
 
         return true;
     }
@@ -371,6 +390,9 @@ export class ProjectService {
 
         await analyticsService.logActivity(removerUserId, "remove_member", projectId, "project", `Removed ${targetMember.user.email}`);
 
+        // Invalidate Member's project cache (they assume they are no longer in it)
+        await cacheService.invalidatePattern(`projects:${memberUserId}`);
+
         return true;
     }
 
@@ -557,6 +579,9 @@ export class ProjectService {
 
         await analyticsService.logActivity(userId, "join_via_invite_link", inviteLink.projectId, "project", `Joined project via invite link`);
 
+        // Invalidate project list cache
+        await cacheService.invalidatePattern(`projects:${userId}`);
+
         return {
             projectId: inviteLink.projectId,
             projectName: inviteLink.project.name,
@@ -595,6 +620,9 @@ export class ProjectService {
             );
 
         await analyticsService.logActivity(userId, "accept_invitation", projectId, "project", "Accepted invitation");
+
+        // Invalidate cache
+        await cacheService.invalidatePattern(`projects:${userId}`);
 
         return { projectId, status: 'active' };
     }
@@ -715,4 +743,114 @@ export class ProjectService {
             invitedAt: member.joinedAt,
         };
     }
+
+    async addAttachment(projectId: string, userId: string, url: string, filename: string) {
+        const { hasHigherRole } = await import("../rbac/roleHierarchy");
+
+        const member = await db.query.projectMembers.findFirst({
+            where: and(
+                eq(projectMembers.projectId, projectId),
+                eq(projectMembers.userId, userId)
+            ),
+            with: { role: true },
+        });
+
+        if (!member) {
+            throw new Error("You are not a member of this project");
+        }
+
+        const roleName = member.role.name.toLowerCase();
+        if (roleName !== 'owner' && roleName !== 'admin') {
+            throw new Error("Only owners and admins can upload project files");
+        }
+
+        const [attachment] = await db.insert(attachments).values({
+            projectId,
+            uploaderId: userId,
+            url,
+            filename,
+        }).returning();
+
+        const uploader = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: { name: true }
+        });
+
+        await analyticsService.logActivity(userId, "upload_project_attachment", projectId, "project", `Uploaded ${filename}`);
+
+        await cacheService.invalidatePattern(`projects:${projectId}:attachments`);
+
+        return { ...attachment, uploaderName: uploader?.name };
+    }
+
+    async removeAttachment(projectId: string, userId: string, attachmentId: string) {
+        const member = await db.query.projectMembers.findFirst({
+            where: and(
+                eq(projectMembers.projectId, projectId),
+                eq(projectMembers.userId, userId)
+            ),
+            with: { role: true },
+        });
+
+        if (!member) {
+            throw new Error("You are not a member of this project");
+        }
+
+        const roleName = member.role.name.toLowerCase();
+        if (roleName !== 'owner' && roleName !== 'admin') {
+            throw new Error("Only owners and admins can delete project files");
+        }
+
+        const attachment = await db.query.attachments.findFirst({
+            where: and(
+                eq(attachments.id, attachmentId),
+                eq(attachments.projectId, projectId)
+            )
+        });
+
+        if (!attachment) {
+            throw new Error("Attachment not found");
+        }
+
+        await db.delete(attachments).where(eq(attachments.id, attachmentId));
+
+        await analyticsService.logActivity(userId, "delete_project_attachment", projectId, "project", `Deleted ${attachment.filename}`);
+
+        await cacheService.invalidatePattern(`projects:${projectId}:attachments`);
+
+        return true;
+    }
+
+    async getAttachments(projectId: string, userId: string) {
+        // Check membership
+        const member = await db.query.projectMembers.findFirst({
+            where: and(
+                eq(projectMembers.projectId, projectId),
+                eq(projectMembers.userId, userId)
+            )
+        });
+
+        if (!member) {
+            throw new Error("You are not a member of this project");
+        }
+
+        const cacheKey = `projects:${projectId}:attachments`;
+        const cached = await cacheService.get(cacheKey);
+        if (cached) return cached;
+
+        const files = await db.query.attachments.findMany({
+            where: eq(attachments.projectId, projectId),
+            with: {
+                uploader: {
+                    columns: { id: true, name: true, avatarUrl: true }
+                }
+            },
+            orderBy: (att, { desc }) => [desc(att.createdAt)]
+        });
+
+        await cacheService.set(cacheKey, files);
+
+        return files;
+    }
 }
+

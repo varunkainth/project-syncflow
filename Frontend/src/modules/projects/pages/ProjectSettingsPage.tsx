@@ -45,6 +45,7 @@ import {
 
 import { createProjectSchema, type CreateProjectFormValues, type Project } from "../schema";
 import { useUpdateProject, useDeleteProject } from "../hooks/useProjects";
+import { getApiError } from "@/utils/errorHandler";
 
 export function ProjectSettingsPage() {
     const { project } = useOutletContext<{ project: Project }>();
@@ -70,9 +71,7 @@ export function ProjectSettingsPage() {
                     toast.success("Project updated successfully");
                 },
                 onError: (error) => {
-                    toast.error("Failed to update project", {
-                        description: error.message,
-                    });
+                    toast.error(getApiError(error, "update project"));
                 },
             }
         );
@@ -85,15 +84,13 @@ export function ProjectSettingsPage() {
                 navigate("/projects");
             },
             onError: (error) => {
-                toast.error("Failed to delete project", {
-                    description: error.message,
-                });
+                toast.error(getApiError(error, "delete project"));
             },
         });
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             <div>
                 <h3 className="text-lg font-medium">Settings</h3>
                 <p className="text-sm text-muted-foreground">

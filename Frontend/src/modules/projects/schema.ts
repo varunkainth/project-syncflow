@@ -15,4 +15,15 @@ export interface Project {
     status: string;
     ownerId: string;
     createdAt: string;
+    attachments?: Attachment[];
+}
+
+export interface Attachment {
+    id: string;
+    projectId?: string;
+    taskId?: string;
+    url: string;
+    filename: string;
+    uploaderId: string;
+    createdAt: string;
 }

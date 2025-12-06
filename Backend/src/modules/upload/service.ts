@@ -7,17 +7,24 @@ cloudinary.config({
 });
 
 export class UploadService {
-    async uploadImage(file: File): Promise<string> {
+    async uploadFile(file: File, folder: string = "antigravity/uploads"): Promise<{ url: string; filename: string }> {
         return new Promise(async (resolve, reject) => {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
+            const filename = file.name;
 
+            // Determine resource type based on file (auto lets Cloudinary decide)
             const uploadStream = cloudinary.uploader.upload_stream(
-                { resource_type: "image", folder: "antigravity/avatars" },
+                {
+                    resource_type: "auto",
+                    folder: folder,
+                    use_filename: true,
+                    unique_filename: true
+                },
                 (error, result) => {
                     if (error) return reject(error);
                     if (!result) return reject(new Error("Upload failed"));
-                    resolve(result.secure_url);
+                    resolve({ url: result.secure_url, filename });
                 }
             );
 

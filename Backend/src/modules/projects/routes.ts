@@ -27,6 +27,11 @@ projects.get("/:id/invitation", projectController.getInvitationDetails);
 projects.post("/:id/invitation/accept", projectController.acceptInvitation);
 projects.post("/:id/invitation/decline", projectController.declineInvitation);
 
+// Attachment routes
+projects.get("/:id/attachments", projectController.getAttachments);
+projects.post("/:id/attachments", projectController.uploadAttachment);
+projects.delete("/:id/attachments/:attachmentId", projectController.deleteAttachment);
+
 // Legacy route (keep for backwards compatibility)
 projects.post("/:id/invite", projectController.inviteMember);
 

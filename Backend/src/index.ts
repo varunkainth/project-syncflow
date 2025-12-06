@@ -19,6 +19,10 @@ import analyticsRoutes from "./modules/analytics/routes";
 import calendarRoutes from "./modules/calendar/routes";
 import notificationRoutes from "./modules/notifications/routes";
 import uploadRoutes from "./modules/upload/routes";
+import timeTrackingRoutes from "./modules/time-tracking/routes";
+import labelRoutes from "./modules/labels/routes";
+import recurringRoutes from "./modules/recurring/routes";
+import dependencyRoutes from "./modules/tasks/dependency.routes";
 console.time("Loading API");
 
 const app = new OpenAPIHono();
@@ -91,6 +95,10 @@ app.use("/analytics/*", authMiddleware);
 app.use("/calendar/*", authMiddleware);
 app.use("/notifications/*", authMiddleware);
 app.use("/upload/*", authMiddleware);
+app.use("/time-tracking/*", authMiddleware);
+app.use("/labels/*", authMiddleware);
+app.use("/recurring/*", authMiddleware);
+app.use("/dependencies/*", authMiddleware);
 
 app.route("/rbac", rbacRoutes);
 app.route("/projects", projectRoutes);
@@ -99,6 +107,10 @@ app.route("/analytics", analyticsRoutes);
 app.route("/calendar", calendarRoutes);
 app.route("/notifications", notificationRoutes);
 app.route("/upload", uploadRoutes);
+app.route("/time-tracking", timeTrackingRoutes);
+app.route("/labels", labelRoutes);
+app.route("/recurring", recurringRoutes);
+app.route("/dependencies", dependencyRoutes);
 
 console.timeEnd("Mounting Routes")
 

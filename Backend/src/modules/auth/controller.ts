@@ -201,8 +201,26 @@ export const googleCallback = async (c: Context) => {
             provider: "google",
         });
 
-        // For now, return JSON. In real app, redirect with token in cookie/query
-        return jsonEncrypted(c, data, 200);
+        // Create the session
+        const tokenData = data as any;
+
+        setCookie(c, "accessToken", tokenData.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 60 * 15, // 15 minutes
+            path: "/",
+        });
+
+        setCookie(c, "refreshToken", tokenData.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+            path: "/",
+        });
+
+        return c.redirect(process.env.FRONTEND_URL || "http://localhost:5173");
     } catch (error: any) {
         return c.json({ error: error.message }, 400);
     }
@@ -225,7 +243,26 @@ export const githubCallback = async (c: Context) => {
             id: githubUser.id.toString(),
             provider: "github",
         });
-        return jsonEncrypted(c, data, 200);
+
+        const tokenData = data as any;
+
+        setCookie(c, "accessToken", tokenData.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 60 * 15, // 15 minutes
+            path: "/",
+        });
+
+        setCookie(c, "refreshToken", tokenData.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+            path: "/",
+        });
+
+        return c.redirect(process.env.FRONTEND_URL || "http://localhost:5173");
     } catch (error: any) {
         return c.json({ error: error.message }, 400);
     }
@@ -303,5 +340,21 @@ export const resetPassword = async (c: Context) => {
         return jsonEncrypted(c, { success: true, message: "Password has been reset successfully." }, 200);
     } catch (error: any) {
         return c.json({ error: error.message }, 400);
+    }
+};
+
+export const deleteAccount = async (c: Context) => {
+    try {
+        const user = c.get("user");
+        if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+        await authService.deleteAccount(user.id);
+
+        deleteCookie(c, "accessToken");
+        deleteCookie(c, "refreshToken");
+
+        return c.json({ success: true, message: "Account deleted successfully" }, 200);
+    } catch (error: any) {
+        return c.json({ error: error.message }, 500);
     }
 };

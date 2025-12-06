@@ -27,8 +27,21 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
+
 } from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useUser, useUpdateProfile } from "@/modules/auth/hooks/useUser";
+import { api } from "@/lib/api";
 import { useUpload } from "@/hooks/useUpload";
 
 const profileSchema = z.object({
@@ -334,6 +347,55 @@ export function ProfilePage() {
                                 </Button>
                             </div>
                         </form>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+                <Card className="lg:col-span-3 border-destructive/50">
+                    <CardHeader>
+                        <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                        <CardDescription>
+                            Irreversible actions for your account
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center justify-between">
+                        <div>
+                            <h3 className="font-medium text-destructive">Delete Account</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Permanently delete your account and all associated data.
+                            </p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">Delete Account</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete your
+                                        account and remove your data from our servers.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={async () => {
+                                            try {
+                                                await api.delete("/auth/account");
+                                                window.location.href = "/auth/signup";
+                                            } catch (error) {
+                                                toast.error("Failed to delete account");
+                                            }
+                                        }}
+                                    >
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </CardContent>
                 </Card>
             </div>

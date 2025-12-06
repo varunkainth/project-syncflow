@@ -8,6 +8,13 @@
       "when": 1764220312686,
       "tag": "0000_large_shen",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765051868314,
+      "tag": "0001_parallel_bastion",
+      "breakpoints": true
     }
   ]
 }

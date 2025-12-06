@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Loader2, Filter, X, User, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Filter, X, User, CheckCircle2, ChevronLeft, ChevronRight, LayoutGrid, List, BarChartHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,9 +21,13 @@ import { Separator } from "@/components/ui/separator";
 import { CreateTaskDialog } from "../../tasks/components/CreateTaskDialog";
 import { TaskCard } from "../../tasks/components/TaskCard";
 import { TaskDetailsSheet } from "../../tasks/components/TaskDetailsSheet";
+import { KanbanBoard } from "../../tasks/components/KanbanBoard";
+import { GanttChart } from "../../tasks/components/GanttChart";
 import { useTasks, type TaskFilters } from "../../tasks/hooks/useTasks";
 import { useProjectMembers } from "../hooks/useProjects";
 import type { Project } from "../schema";
+
+type ViewMode = "list" | "kanban" | "gantt";
 
 type StatusFilter = "all" | "todo" | "in-progress" | "done";
 
@@ -48,6 +52,7 @@ export function ProjectTasksPage() {
     const [filters, setFilters] = useState<Filters>(initialFilters);
     const [page, setPage] = useState(1);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<ViewMode>("list");
 
     // Build query filters for server
     const queryFilters: TaskFilters = {
@@ -113,8 +118,8 @@ export function ProjectTasksPage() {
     const pagination = data?.pagination;
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-lg font-medium">Tasks</h3>
                     <p className="text-sm text-muted-foreground">
@@ -122,6 +127,37 @@ export function ProjectTasksPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* View Toggle */}
+                    <div className="flex items-center border rounded-lg p-0.5">
+                        <Button
+                            variant={viewMode === "list" ? "secondary" : "ghost"}
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => setViewMode("list")}
+                            title="List View"
+                        >
+                            <List className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant={viewMode === "kanban" ? "secondary" : "ghost"}
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => setViewMode("kanban")}
+                            title="Kanban Board"
+                        >
+                            <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant={viewMode === "gantt" ? "secondary" : "ghost"}
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => setViewMode("gantt")}
+                            title="Gantt Chart"
+                        >
+                            <BarChartHorizontal className="h-4 w-4" />
+                        </Button>
+                    </div>
+
                     {/* Filter Button */}
                     <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                         <PopoverTrigger asChild>
@@ -296,41 +332,56 @@ export function ProjectTasksPage() {
 
             {tasks && tasks.length > 0 ? (
                 <>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {tasks.map((task) => (
-                            <TaskCard
-                                key={task.id}
-                                task={task}
-                                onClick={() => setSelectedTaskId(task.id)}
-                            />
-                        ))}
-                    </div>
+                    {viewMode === "kanban" ? (
+                        <KanbanBoard
+                            tasks={tasks}
+                            projectId={project.id}
+                            onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+                        />
+                    ) : viewMode === "gantt" ? (
+                        <GanttChart
+                            tasks={tasks}
+                            onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+                        />
+                    ) : (
+                        <>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {tasks.map((task) => (
+                                    <TaskCard
+                                        key={task.id}
+                                        task={task}
+                                        onClick={() => setSelectedTaskId(task.id)}
+                                    />
+                                ))}
+                            </div>
 
-                    {/* Pagination */}
-                    {pagination && pagination.totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-4 pt-4">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={!pagination.hasPrev}
-                                onClick={handlePrevPage}
-                            >
-                                <ChevronLeft className="h-4 w-4 mr-1" />
-                                Previous
-                            </Button>
-                            <span className="text-sm text-muted-foreground">
-                                Page {pagination.page} of {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={!pagination.hasNext}
-                                onClick={handleNextPage}
-                            >
-                                Next
-                                <ChevronRight className="h-4 w-4 ml-1" />
-                            </Button>
-                        </div>
+                            {/* Pagination */}
+                            {pagination && pagination.totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-4 pt-4">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!pagination.hasPrev}
+                                        onClick={handlePrevPage}
+                                    >
+                                        <ChevronLeft className="h-4 w-4 mr-1" />
+                                        Previous
+                                    </Button>
+                                    <span className="text-sm text-muted-foreground">
+                                        Page {pagination.page} of {pagination.totalPages}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={!pagination.hasNext}
+                                        onClick={handleNextPage}
+                                    >
+                                        Next
+                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                    </Button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </>
             ) : pagination && pagination.total === 0 && activeFilterCount > 0 ? (

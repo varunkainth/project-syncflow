@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { encryptPayload, decryptPayload } from "@/utils/encryption";
-import type { Task, CreateTaskFormValues } from "../schema";
+import type { Task, CreateTaskFormValues, Attachment } from "../schema";
 
 export interface TaskFilters {
     query?: string;
@@ -149,12 +149,50 @@ export function useUpdateComment(projectId: string) {
     });
 }
 
+
+
 export function useDeleteComment(projectId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async ({ commentId, taskId }: { commentId: string; taskId: string }) => {
             await api.delete(`/tasks/comments/${commentId}`);
+            return { taskId };
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["task", data.taskId] });
+        },
+    });
+}
+
+export function useUploadTaskAttachment(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ taskId, file }: { taskId: string; file: File }) => {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await api.post(`/tasks/${taskId}/attachments`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            const decryptedData = decryptPayload(response.data.data);
+            return decryptedData.attachment as Attachment;
+        },
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+        },
+    });
+}
+
+export function useDeleteTaskAttachment(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ taskId, attachmentId }: { taskId: string; attachmentId: string }) => {
+            await api.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
             return { taskId };
         },
         onSuccess: (data) => {

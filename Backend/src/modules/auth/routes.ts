@@ -17,6 +17,7 @@ auth.get("/me", authMiddleware, authController.me);
 // Profile routes
 auth.put("/profile", authMiddleware, authController.updateProfile);
 auth.put("/password", authMiddleware, authController.changePassword);
+auth.delete("/account", authMiddleware, authController.deleteAccount);
 
 // Password Reset routes
 auth.post("/forgot-password", authController.requestPasswordReset);

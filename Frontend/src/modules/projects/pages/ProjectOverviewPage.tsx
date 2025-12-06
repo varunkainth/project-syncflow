@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { ProjectAttachmentsSection } from "../components/ProjectAttachmentsSection";
 import type { Project } from "../schema";
 
 export function ProjectOverviewPage() {
@@ -58,6 +59,9 @@ export function ProjectOverviewPage() {
                     </p>
                 </CardContent>
             </Card>
+
+            {/* Project Attachments */}
+            <ProjectAttachmentsSection projectId={project.id} />
         </div>
     );
 }

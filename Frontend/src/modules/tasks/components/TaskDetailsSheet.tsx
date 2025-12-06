@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { formatDistanceToNow, format, isPast, isWithinInterval, addDays } from "date-fns";
-import { Trash2, Send, Loader2, MessageSquare, Edit2, Calendar, User, AlertCircle } from "lucide-react";
+import { Trash2, Send, Loader2, MessageSquare, Edit2, Calendar, User, AlertCircle, Paperclip, Download, X, Plus, FileIcon, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,10 +22,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { useTask, useUpdateTask, useDeleteTask, useAddComment, useUpdateComment, useDeleteComment } from "../hooks/useTasks";
+import { useTask, useUpdateTask, useDeleteTask, useAddComment, useUpdateComment, useDeleteComment, useUploadTaskAttachment, useDeleteTaskAttachment } from "../hooks/useTasks";
 import { useUser } from "../../auth/hooks/useUser";
 import { useProjectMembers, useCurrentUserRole } from "../../projects/hooks/useProjects";
-import type { Comment } from "../schema";
+import { getApiError } from "@/utils/errorHandler";
+import { TimeTracker } from "./TimeTracker";
+import { LabelSelector } from "./LabelSelector";
+import { DependencySelector } from "./DependencySelector";
+import { api } from "@/lib/api";
+import type { Comment, Attachment } from "../schema";
 
 interface TaskDetailsSheetProps {
     taskId: string | null;
@@ -58,7 +63,7 @@ function CommentItem({ comment, projectId, currentUserId }: { comment: CommentNo
                 setIsReplying(false);
                 toast.success("Reply added");
             },
-            onError: () => toast.error("Failed to add reply"),
+            onError: (error) => toast.error(getApiError(error, "add reply")),
         });
     };
 
@@ -72,7 +77,7 @@ function CommentItem({ comment, projectId, currentUserId }: { comment: CommentNo
                 setIsEditing(false);
                 toast.success("Comment updated");
             },
-            onError: () => toast.error("Failed to update comment"),
+            onError: (error) => toast.error(getApiError(error, "update comment")),
         });
     };
 
@@ -80,7 +85,7 @@ function CommentItem({ comment, projectId, currentUserId }: { comment: CommentNo
         if (confirm("Delete this comment?")) {
             deleteComment.mutate({ commentId: comment.id, taskId: comment.taskId }, {
                 onSuccess: () => toast.success("Comment deleted"),
-                onError: () => toast.error("Failed to delete comment"),
+                onError: (error) => toast.error(getApiError(error, "delete comment")),
             });
         }
     };
@@ -186,6 +191,8 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
     const updateTask = useUpdateTask(projectId);
     const deleteTask = useDeleteTask(projectId);
     const addComment = useAddComment(projectId);
+    const uploadAttachment = useUploadTaskAttachment(projectId);
+    const deleteAttachment = useDeleteTaskAttachment(projectId);
     const { data: members = [] } = useProjectMembers(projectId);
     const { canEditTasks } = useCurrentUserRole(projectId, user?.id);
     const [comment, setComment] = useState("");
@@ -212,7 +219,7 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
         if (task[field] === value) return; // No change
         updateTask.mutate({ id: task.id, data: { [field]: value } }, {
             onSuccess: () => toast.success(`${field === "title" ? "Title" : "Description"} updated`),
-            onError: () => toast.error(`Failed to update ${field}`),
+            onError: (error) => toast.error(getApiError(error, `update ${field}`)),
         });
     };
 
@@ -220,7 +227,7 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
         if (!task || !canEdit) return;
         updateTask.mutate({ id: task.id, data: { status: value as any } }, {
             onSuccess: () => toast.success("Status updated"),
-            onError: () => toast.error("Failed to update status"),
+            onError: (error) => toast.error(getApiError(error, "update status")),
         });
     };
 
@@ -231,7 +238,7 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
                 toast.success("Task deleted");
                 onClose();
             },
-            onError: () => toast.error("Failed to delete task"),
+            onError: (error) => toast.error(getApiError(error, "delete task")),
         });
     };
 
@@ -242,8 +249,48 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
                 setComment("");
                 toast.success("Comment added");
             },
-            onError: () => toast.error("Failed to add comment"),
+            onError: (error) => toast.error(getApiError(error, "add comment")),
         });
+    };
+
+    const handleUploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !task) return;
+
+        uploadAttachment.mutate({ taskId: task.id, file }, {
+            onSuccess: () => toast.success("File uploaded"),
+            onError: (error) => toast.error(getApiError(error, "upload file")),
+        });
+        e.target.value = ""; // Reset input
+    };
+
+    const handleDeleteAttachment = (attachmentId: string) => {
+        if (!task || !confirm("Delete this attachment?")) return;
+        deleteAttachment.mutate({ taskId: task.id, attachmentId }, {
+            onSuccess: () => toast.success("Attachment deleted"),
+            onError: (error) => toast.error(getApiError(error, "delete attachment")),
+        });
+    };
+
+    const handleDownloadICal = async () => {
+        if (!task) return;
+        try {
+            const response = await api.get(`/calendar/ical/tasks/${task.id}`, {
+                responseType: 'blob'
+            });
+            const blob = new Blob([response.data], { type: 'text/calendar' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `task-${task.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success("Calendar event downloaded");
+        } catch (error) {
+            toast.error(getApiError(error, "download calendar event"));
+        }
     };
 
     const buildCommentTree = (comments: Comment[]) => {
@@ -284,7 +331,7 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
 
     return (
         <Dialog open={!!taskId} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+            <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
                 <DialogTitle className="sr-only">Task Details</DialogTitle>
                 <DialogDescription className="sr-only">View and manage task details, comments, and status.</DialogDescription>
                 {isLoading || !task ? (
@@ -294,7 +341,7 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
                 ) : (
                     <>
                         {/* Header Section */}
-                        <div className="p-6 border-b bg-gradient-to-r from-background to-muted/30">
+                        <div className="p-4 sm:p-6 border-b bg-gradient-to-r from-background to-muted/30">
                             {/* Title Row */}
                             <div className="mb-3">
                                 <Input
@@ -302,7 +349,7 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
                                     onBlur={(e: React.FocusEvent<HTMLInputElement>) => handleUpdate("title", e.target.value)}
                                     disabled={!canEdit}
-                                    className="text-3xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent text-foreground tracking-tight"
+                                    className="text-xl sm:text-3xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent text-foreground tracking-tight"
                                 />
                             </div>
 
@@ -393,7 +440,7 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
                                                     { id: task.id, data: { assigneeId: newAssigneeId } },
                                                     {
                                                         onSuccess: () => toast.success("Assignee updated"),
-                                                        onError: () => toast.error("Failed to update assignee"),
+                                                        onError: (error) => toast.error(getApiError(error, "update assignee")),
                                                     }
                                                 );
                                             }}
@@ -466,10 +513,19 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
                                     )}
                                 </div>
 
-                                {/* Delete Button - rightmost */}
-                                {canEdit && (
-                                    <>
-                                        <div className="flex-1" />
+                                {/* Action Buttons - rightmost */}
+                                <>
+                                    <div className="flex-1" />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                                        onClick={handleDownloadICal}
+                                        title="Add to Calendar"
+                                    >
+                                        <CalendarPlus className="h-5 w-5" />
+                                    </Button>
+                                    {canEdit && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -478,14 +534,76 @@ export function TaskDetailsSheet({ taskId, projectId, onClose }: TaskDetailsShee
                                         >
                                             <Trash2 className="h-5 w-5" />
                                         </Button>
-                                    </>
-                                )}
+                                    )}
+                                </>
                             </div>
                         </div>
 
                         <div className="flex-1 flex flex-col min-h-0">
                             <ScrollArea className="flex-1">
-                                <div className="p-6">
+                                <div className="p-4 sm:p-6">
+                                    {/* Attachments Section */}
+                                    <div className="mb-8 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                                <h4 className="text-sm font-semibold text-foreground">Attachments</h4>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {task.attachments?.map(att => (
+                                                <div key={att.id} className="group relative flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-all shadow-sm hover:shadow-md">
+                                                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                                        <FileIcon className="h-5 w-5 text-primary" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium truncate" title={att.filename}>{att.filename}</p>
+                                                        <p className="text-xs text-muted-foreground">{format(new Date(att.createdAt), 'MMM d, yyyy')}</p>
+                                                    </div>
+                                                    <div className="flex items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" asChild>
+                                                            <a href={att.url} target="_blank" rel="noopener noreferrer" download>
+                                                                <Download className="h-4 w-4" />
+                                                            </a>
+                                                        </Button>
+                                                        {canEdit && (
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteAttachment(att.id)}>
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {/* Upload Button */}
+                                            {canEdit && (
+                                                <label className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-dashed hover:bg-muted/30 cursor-pointer transition-colors text-muted-foreground hover:text-primary hover:border-primary/50 min-h-[80px]">
+                                                    {uploadAttachment.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+                                                    <span className="text-sm font-medium">Upload File</span>
+                                                    <input type="file" className="hidden" onChange={handleUploadFile} disabled={uploadAttachment.isPending} />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Labels Section */}
+                                    <div className="mb-8">
+                                        <LabelSelector projectId={projectId} taskId={task.id} />
+                                    </div>
+
+                                    {/* Dependencies Section */}
+                                    <div className="mb-8">
+                                        <DependencySelector
+                                            projectId={projectId}
+                                            taskId={task.id}
+                                        />
+                                    </div>
+
+                                    {/* Time Tracking Section */}
+                                    <div className="mb-8">
+                                        <TimeTracker taskId={task.id} />
+                                    </div>
+
                                     {/* Comments Section */}
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 mb-4">

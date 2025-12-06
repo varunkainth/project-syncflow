@@ -19,6 +19,7 @@ import { SignupPage } from "./modules/auth/pages/SignupPage";
 import { ForgotPasswordPage } from "./modules/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./modules/auth/pages/ResetPasswordPage";
 import { NotificationsPage } from "./modules/notifications/pages/NotificationsPage";
+import { CalendarPage } from "./modules/calendar/pages/CalendarPage";
 import { SettingsLayout } from "./pages/settings/SettingsLayout";
 import { SecurityPage } from "./pages/settings/SecurityPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
 			{
 				path: "tasks",
 				element: <TasksPage />,
+			},
+			{
+				path: "calendar",
+				element: <CalendarPage />,
 			},
 			{
 				path: "settings",
