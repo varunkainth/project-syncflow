@@ -201,28 +201,12 @@ export const googleCallback = async (c: Context) => {
             provider: "google",
         });
 
-        // Create the session
         const tokenData = data as any;
-
-        setCookie(c, "accessToken", tokenData.accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "None",
-            maxAge: 60 * 15, // 15 minutes
-            path: "/",
-        });
-
-        setCookie(c, "refreshToken", tokenData.refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "None",
-            maxAge: 60 * 60 * 24 * 7, // 7 days
-            path: "/",
-        });
-
-        return c.redirect(process.env.FRONTEND_URL || "http://localhost:5173");
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return c.redirect(`${frontendUrl}/auth/oauth-callback?accessToken=${tokenData.accessToken}&refreshToken=${tokenData.refreshToken}`);
     } catch (error: any) {
-        return c.json({ error: error.message }, 400);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return c.redirect(`${frontendUrl}/auth/login?error=${encodeURIComponent(error.message)}`);
     }
 };
 
@@ -245,24 +229,40 @@ export const githubCallback = async (c: Context) => {
         });
 
         const tokenData = data as any;
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return c.redirect(`${frontendUrl}/auth/oauth-callback?accessToken=${tokenData.accessToken}&refreshToken=${tokenData.refreshToken}`);
+    } catch (error: any) {
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return c.redirect(`${frontendUrl}/auth/login?error=${encodeURIComponent(error.message)}`);
+    }
+};
 
-        setCookie(c, "accessToken", tokenData.accessToken, {
+export const setTokens = async (c: Context) => {
+    try {
+        const body = await c.req.json();
+        const { accessToken, refreshToken } = body;
+
+        if (!accessToken || !refreshToken) {
+            return c.json({ error: "Tokens required" }, 400);
+        }
+
+        setCookie(c, "accessToken", accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 60 * 15, // 15 minutes
+            maxAge: 60 * 15,
             path: "/",
         });
 
-        setCookie(c, "refreshToken", tokenData.refreshToken, {
+        setCookie(c, "refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: "None",
-            maxAge: 60 * 60 * 24 * 7, // 7 days
+            maxAge: 60 * 60 * 24 * 7,
             path: "/",
         });
 
-        return c.redirect(process.env.FRONTEND_URL || "http://localhost:5173");
+        return c.json({ success: true });
     } catch (error: any) {
         return c.json({ error: error.message }, 400);
     }

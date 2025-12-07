@@ -33,6 +33,7 @@ auth.get("/google", authController.googleAuth);
 auth.get("/google/callback", authController.googleCallback);
 auth.get("/github", authController.githubAuth);
 auth.get("/github/callback", authController.githubCallback);
+auth.post("/set-tokens", authController.setTokens);
 
 export default auth;
 

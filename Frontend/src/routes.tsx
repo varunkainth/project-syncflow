@@ -18,6 +18,7 @@ import { LoginPage } from "./modules/auth/pages/LoginPage";
 import { SignupPage } from "./modules/auth/pages/SignupPage";
 import { ForgotPasswordPage } from "./modules/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./modules/auth/pages/ResetPasswordPage";
+import { OAuthCallbackPage } from "./modules/auth/pages/OAuthCallbackPage";
 import { NotificationsPage } from "./modules/notifications/pages/NotificationsPage";
 import { CalendarPage } from "./modules/calendar/pages/CalendarPage";
 import { SettingsLayout } from "./pages/settings/SettingsLayout";
@@ -122,6 +123,10 @@ export const router = createBrowserRouter([
 			{
 				path: "reset-password",
 				element: <ResetPasswordPage />,
+			},
+			{
+				path: "oauth-callback",
+				element: <OAuthCallbackPage />,
 			},
 		],
 	},
