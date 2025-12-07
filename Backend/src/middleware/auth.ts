@@ -5,13 +5,13 @@ import { getCookie } from "hono/cookie";
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretjwtsecret";
 
 export const authMiddleware = async (c: Context, next: Next) => {
-    let token = "";
+    let token: string | undefined;
     const authHeader = c.req.header("Authorization");
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
         token = authHeader.split(" ")[1];
     } else {
-        token = getCookie(c, "accessToken") || "";
+        token = getCookie(c, "accessToken");
     }
 
     if (!token) {
@@ -20,7 +20,6 @@ export const authMiddleware = async (c: Context, next: Next) => {
     try {
         const payload = await verify(token, JWT_SECRET!);
         c.set("user", payload); // Payload contains { id, email }
-        // console.log("User authenticated:", payload);
         await next();
     } catch (error) {
         console.error("Token verification failed:", error);

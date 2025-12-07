@@ -15,26 +15,54 @@ export const users = pgTable("users", {
     twoFactorSecret: text("two_factor_secret"),
     resetToken: text("reset_token"),
     resetTokenExpiresAt: timestamp("reset_token_expires_at"),
+    emailVerified: boolean("email_verified").default(false),
+    emailVerificationToken: text("email_verification_token"),
+    emailVerificationExpiresAt: timestamp("email_verification_expires_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Sessions
+// Sessions (for session management)
 export const sessions = pgTable("sessions", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").references(() => users.id).notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
     token: text("token").unique().notNull(),
+    userAgent: text("user_agent"),
+    ipAddress: text("ip_address"),
     expiresAt: timestamp("expires_at").notNull(),
+    lastActiveAt: timestamp("last_active_at").defaultNow(),
     createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Refresh Tokens
 export const refreshTokens = pgTable("refresh_tokens", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").references(() => users.id).notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
     token: text("token").unique().notNull(),
+    userAgent: text("user_agent"),
+    ipAddress: text("ip_address"),
     expiresAt: timestamp("expires_at").notNull(),
     revoked: boolean("revoked").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+// OAuth Providers (for account linking)
+export const oauthAccounts = pgTable("oauth_accounts", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    provider: text("provider").notNull(), // 'google', 'github'
+    providerAccountId: text("provider_account_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Audit Logs (security events)
+export const auditLogs = pgTable("audit_logs", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: 'cascade' }),
+    action: text("action").notNull(), // 'login', 'logout', 'password_change', 'login_failed', '2fa_enabled'
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    metadata: text("metadata"), // JSON string for extra details
     createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -403,5 +431,29 @@ export const taskDependenciesRelations = relations(taskDependencies, ({ one }) =
         fields: [taskDependencies.dependsOnTaskId],
         references: [tasks.id],
         relationName: "task_blockers",
+    }),
+}));
+
+// OAuth Accounts Relations
+export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
+    user: one(users, {
+        fields: [oauthAccounts.userId],
+        references: [users.id],
+    }),
+}));
+
+// Audit Logs Relations
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+    user: one(users, {
+        fields: [auditLogs.userId],
+        references: [users.id],
+    }),
+}));
+
+// Sessions Relations
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+    user: one(users, {
+        fields: [sessions.userId],
+        references: [users.id],
     }),
 }));

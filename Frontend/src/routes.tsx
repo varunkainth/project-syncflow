@@ -19,6 +19,7 @@ import { SignupPage } from "./modules/auth/pages/SignupPage";
 import { ForgotPasswordPage } from "./modules/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./modules/auth/pages/ResetPasswordPage";
 import { OAuthCallbackPage } from "./modules/auth/pages/OAuthCallbackPage";
+import { VerifyEmailPage } from "./modules/auth/pages/VerifyEmailPage";
 import { NotificationsPage } from "./modules/notifications/pages/NotificationsPage";
 import { CalendarPage } from "./modules/calendar/pages/CalendarPage";
 import { SettingsLayout } from "./pages/settings/SettingsLayout";
@@ -127,6 +128,10 @@ export const router = createBrowserRouter([
 			{
 				path: "oauth-callback",
 				element: <OAuthCallbackPage />,
+			},
+			{
+				path: "verify-email",
+				element: <VerifyEmailPage />,
 			},
 		],
 	},

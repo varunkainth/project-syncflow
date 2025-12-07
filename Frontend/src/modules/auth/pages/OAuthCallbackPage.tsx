@@ -10,8 +10,7 @@ export function OAuthCallbackPage() {
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
-		const accessToken = searchParams.get("accessToken");
-		const refreshToken = searchParams.get("refreshToken");
+		const code = searchParams.get("code");
 		const error = searchParams.get("error");
 
 		if (error) {
@@ -19,9 +18,8 @@ export function OAuthCallbackPage() {
 			return;
 		}
 
-		if (accessToken && refreshToken) {
-			// Call backend to set cookies
-			api.post("/auth/set-tokens", { accessToken, refreshToken })
+		if (code) {
+			api.post("/auth/oauth/exchange", { code })
 				.then(() => {
 					queryClient.invalidateQueries({ queryKey: ["user"] });
 					navigate("/");

@@ -42,3 +42,14 @@ export const resetPasswordEmailTemplate = (resetUrl: string) => {
         `
     };
 };
+
+export const emailVerificationTemplate = (name: string, verifyUrl: string) => `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Verify Your Email</h2>
+        <p>Hi ${name},</p>
+        <p>Thanks for signing up for SyncFlow! Please verify your email address by clicking the button below.</p>
+        <a href="${verifyUrl}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 16px 0;">Verify Email</a>
+        <p>This link will expire in 24 hours.</p>
+        <p>If you didn't create an account, you can safely ignore this email.</p>
+    </div>
+`;
