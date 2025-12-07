@@ -117,7 +117,7 @@ export function useDeleteTask(projectId: string) {
     });
 }
 
-export function useAddComment(projectId: string) {
+export function useAddComment(_projectId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -127,13 +127,13 @@ export function useAddComment(projectId: string) {
             const decryptedData = decryptPayload(response.data.data);
             return decryptedData.comment;
         },
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
         },
     });
 }
 
-export function useUpdateComment(projectId: string) {
+export function useUpdateComment(_projectId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -151,7 +151,7 @@ export function useUpdateComment(projectId: string) {
 
 
 
-export function useDeleteComment(projectId: string) {
+export function useDeleteComment(_projectId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -165,7 +165,7 @@ export function useDeleteComment(projectId: string) {
     });
 }
 
-export function useUploadTaskAttachment(projectId: string) {
+export function useUploadTaskAttachment(_projectId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -181,13 +181,13 @@ export function useUploadTaskAttachment(projectId: string) {
             const decryptedData = decryptPayload(response.data.data);
             return decryptedData.attachment as Attachment;
         },
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
         },
     });
 }
 
-export function useDeleteTaskAttachment(projectId: string) {
+export function useDeleteTaskAttachment(_projectId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({

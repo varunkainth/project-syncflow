@@ -1,20 +1,29 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { User, Lock } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+interface NavItem {
+    href: string;
+    title: string;
+    icon: React.ComponentType<{ className?: string }>;
+}
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
-    items: {
-        href: string;
-        title: string;
-        icon: React.ComponentType<{ className?: string }>;
-    }[];
+    items: NavItem[];
 }
 
 function SidebarNav({ className, items, ...props }: SidebarNavProps) {
     return (
         <nav
             className={cn(
-                "flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1",
+                "flex flex-col space-y-1",
                 className
             )}
             {...props}
@@ -40,10 +49,43 @@ function SidebarNav({ className, items, ...props }: SidebarNavProps) {
     );
 }
 
-const sidebarNavItems = [
+// Mobile Navigation Dropdown
+function MobileNav({ items }: { items: NavItem[] }) {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const getCurrentValue = () => {
+        return items.find(item => location.pathname === item.href)?.href || items[0].href;
+    };
+
+    const handleNavChange = (value: string) => {
+        navigate(value);
+    };
+
+
+    return (
+        <Select value={getCurrentValue()} onValueChange={handleNavChange}>
+            <SelectTrigger className="w-full">
+                <SelectValue placeholder="Navigate to..." />
+            </SelectTrigger>
+            <SelectContent>
+                {items.map((item) => (
+                    <SelectItem key={item.href} value={item.href}>
+                        <div className="flex items-center">
+                            <item.icon className="mr-2 h-4 w-4" />
+                            {item.title}
+                        </div>
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
+
+const sidebarNavItems: NavItem[] = [
     {
         title: "Profile",
-        href: "/profile", // Keeping profile accessible, though it's a separate route technically
+        href: "/profile",
         icon: User,
     },
     {
@@ -55,16 +97,23 @@ const sidebarNavItems = [
 
 export function SettingsLayout() {
     return (
-        <div className="hidden space-y-6 p-10 pb-16 md:block">
+        <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-10 pb-16">
             <div className="space-y-0.5">
-                <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-                <p className="text-muted-foreground">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Settings</h2>
+                <p className="text-sm text-muted-foreground">
                     Manage your account settings and set e-mail preferences.
                 </p>
             </div>
-            <div className="my-6 border-t" />
+            <div className="border-t" />
+
+            {/* Mobile Navigation */}
+            <div className="lg:hidden">
+                <MobileNav items={sidebarNavItems} />
+            </div>
+
             <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-                <aside className="-mx-4 lg:w-1/5">
+                {/* Desktop Sidebar */}
+                <aside className="hidden lg:block lg:w-1/5">
                     <SidebarNav items={sidebarNavItems} />
                 </aside>
                 <div className="flex-1 lg:max-w-2xl">
@@ -74,3 +123,4 @@ export function SettingsLayout() {
         </div>
     );
 }
+

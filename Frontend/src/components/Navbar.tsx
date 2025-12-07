@@ -11,9 +11,9 @@ import {
     CheckSquare,
     BarChart3,
     Menu,
-    X,
     Calendar,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
     CommandDialog,
@@ -111,12 +111,43 @@ export function Navbar() {
                                     {item.name}
                                 </Link>
                             ))}
+                            {/* Divider */}
+                            <div className="my-2 border-t" />
+                            {/* Profile Link */}
+                            <Link
+                                to="/profile"
+                                className={cn(
+                                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium",
+                                    location.pathname === "/profile"
+                                        ? "bg-primary/10 text-primary"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                                )}
+                            >
+                                <User className="h-5 w-5" />
+                                Profile
+                            </Link>
+                            {/* Settings Link */}
+                            <Link
+                                to="/settings/security"
+                                className={cn(
+                                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium",
+                                    location.pathname.startsWith("/settings")
+                                        ? "bg-primary/10 text-primary"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                                )}
+                            >
+                                <Settings className="h-5 w-5" />
+                                Settings
+                            </Link>
                         </nav>
                         <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                                    <User className="h-5 w-5" />
-                                </div>
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={user?.avatarUrl} className="object-cover" />
+                                    <AvatarFallback>
+                                        {user?.name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                                    </AvatarFallback>
+                                </Avatar>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">
                                         {user?.name || "User"}
@@ -225,11 +256,14 @@ export function Navbar() {
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="ghost"
-                                    className="relative h-8 w-8 rounded-full ring-2 ring-primary/10 hover:ring-primary/30 transition-all hidden sm:flex"
+                                    className="relative h-8 w-8 rounded-full ring-2 ring-primary/10 hover:ring-primary/30 transition-all hidden sm:flex p-0"
                                 >
-                                    <div className="flex h-full w-full items-center justify-center rounded-full bg-muted">
-                                        <User className="h-4 w-4" />
-                                    </div>
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={user?.avatarUrl} className="object-cover" />
+                                        <AvatarFallback className="text-xs">
+                                            {user?.name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                                        </AvatarFallback>
+                                    </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end" forceMount>

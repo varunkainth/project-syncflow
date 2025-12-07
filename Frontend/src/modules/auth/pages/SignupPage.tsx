@@ -22,6 +22,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { api } from "@/lib/api";
 import { type SignupFormValues, signupSchema } from "../schema";
 import { encryptPayload } from "@/utils/encryption";
@@ -103,7 +104,7 @@ export function SignupPage() {
                                 <FormItem>
                                     <FormLabel>Password</FormLabel>
                                     <FormControl>
-                                        <Input type="password" {...field} />
+                                        <PasswordInput {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

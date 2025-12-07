@@ -3,11 +3,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { api } from "@/lib/api";
@@ -39,7 +39,7 @@ export function ResetPasswordPage() {
 
     if (!token) {
         return (
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-md mx-4 sm:mx-0">
                 <CardHeader>
                     <CardTitle className="text-destructive">Invalid Link</CardTitle>
                     <CardDescription>
@@ -80,7 +80,7 @@ export function ResetPasswordPage() {
     }
 
     return (
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md mx-4 sm:mx-0">
             <CardHeader>
                 <CardTitle>Reset Password</CardTitle>
                 <CardDescription>
@@ -97,7 +97,7 @@ export function ResetPasswordPage() {
                                 <FormItem>
                                     <FormLabel>New Password</FormLabel>
                                     <FormControl>
-                                        <Input type="password" placeholder="••••••••" {...field} />
+                                        <PasswordInput placeholder="••••••••" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -110,7 +110,7 @@ export function ResetPasswordPage() {
                                 <FormItem>
                                     <FormLabel>Confirm Password</FormLabel>
                                     <FormControl>
-                                        <Input type="password" placeholder="••••••••" {...field} />
+                                        <PasswordInput placeholder="••••••••" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

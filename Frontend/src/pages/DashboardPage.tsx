@@ -7,7 +7,6 @@ import {
     Clock,
     AlertCircle,
     ArrowRight,
-    Loader2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow, format, isPast, isToday, isTomorrow } from "date-fns";
@@ -26,6 +25,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUser } from "@/modules/auth/hooks/useUser";
 import { useDashboard } from "@/hooks/useDashboard";
 import { CreateProjectDialog } from "@/modules/projects/components/CreateProjectDialog";
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Helper to format action text
 function formatAction(action: string): string {
@@ -62,16 +63,82 @@ function StatusBadge({ status }: { status: string }) {
     return <Badge className={`${variant.class} border-0`}>{variant.label}</Badge>;
 }
 
+// Dashboard Skeleton Loading
+function DashboardSkeleton() {
+    return (
+        <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-6 md:p-8 pt-4 sm:pt-6">
+            {/* Header Skeleton */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-48" />
+                </div>
+                <Skeleton className="h-10 w-32" />
+            </div>
+
+            {/* Stats Grid Skeleton */}
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                {[1, 2, 3, 4].map((i) => (
+                    <Card key={i}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-4 rounded" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-8 w-16 mb-1" />
+                            <Skeleton className="h-3 w-28" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Main Content Grid Skeleton */}
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-7">
+                <Card className="lg:col-span-4">
+                    <CardHeader>
+                        <Skeleton className="h-5 w-24" />
+                        <Skeleton className="h-4 w-40" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="flex items-center gap-4 p-3">
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-3 w-1/2" />
+                                </div>
+                                <Skeleton className="h-6 w-20 rounded-full" />
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+                <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <Skeleton className="h-5 w-24" />
+                        <Skeleton className="h-4 w-40" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-start gap-3">
+                                <Skeleton className="h-8 w-8 rounded-full" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-3 w-1/2" />
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}
+
 export function DashboardPage() {
     const { data: user } = useUser();
     const { data: dashboard, isLoading, error } = useDashboard();
 
     if (isLoading) {
-        return (
-            <div className="flex-1 flex items-center justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     if (error) {

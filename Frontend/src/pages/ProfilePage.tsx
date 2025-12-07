@@ -10,7 +10,6 @@ import {
     Loader2,
     Check,
     Camera,
-    Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 

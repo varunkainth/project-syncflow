@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Loader2, Filter, X, User, CheckCircle2, ChevronLeft, ChevronRight, LayoutGrid, List, BarChartHorizontal } from "lucide-react";
+import { Filter, X, User, CheckCircle2, ChevronLeft, ChevronRight, LayoutGrid, List, BarChartHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import {
     Select,
     SelectContent,
@@ -17,6 +18,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { CreateTaskDialog } from "../../tasks/components/CreateTaskDialog";
 import { TaskCard } from "../../tasks/components/TaskCard";
@@ -100,8 +102,34 @@ export function ProjectTasksPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-[200px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-2">
+                        <Skeleton className="h-6 w-24" />
+                        <Skeleton className="h-4 w-48" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-9 w-24" />
+                        <Skeleton className="h-9 w-24" />
+                    </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <Card key={i}>
+                            <CardHeader className="pb-2">
+                                <Skeleton className="h-5 w-3/4" />
+                            </CardHeader>
+                            <CardContent className="space-y-2">
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
+                                <div className="flex items-center gap-2 pt-2">
+                                    <Skeleton className="h-6 w-16 rounded-full" />
+                                    <Skeleton className="h-6 w-6 rounded-full" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -127,7 +155,7 @@ export function ProjectTasksPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* View Toggle */}
+                    {/* View Toggle - Kanban/Gantt hidden on small screens */}
                     <div className="flex items-center border rounded-lg p-0.5">
                         <Button
                             variant={viewMode === "list" ? "secondary" : "ghost"}
@@ -141,7 +169,7 @@ export function ProjectTasksPage() {
                         <Button
                             variant={viewMode === "kanban" ? "secondary" : "ghost"}
                             size="sm"
-                            className="h-8 px-3"
+                            className="h-8 px-3 hidden md:flex"
                             onClick={() => setViewMode("kanban")}
                             title="Kanban Board"
                         >
@@ -150,7 +178,7 @@ export function ProjectTasksPage() {
                         <Button
                             variant={viewMode === "gantt" ? "secondary" : "ghost"}
                             size="sm"
-                            className="h-8 px-3"
+                            className="h-8 px-3 hidden md:flex"
                             onClick={() => setViewMode("gantt")}
                             title="Gantt Chart"
                         >
@@ -333,16 +361,56 @@ export function ProjectTasksPage() {
             {tasks && tasks.length > 0 ? (
                 <>
                     {viewMode === "kanban" ? (
-                        <KanbanBoard
-                            tasks={tasks}
-                            projectId={project.id}
-                            onTaskClick={(taskId) => setSelectedTaskId(taskId)}
-                        />
+                        <>
+                            {/* Kanban only visible on md+ screens */}
+                            <div className="hidden md:block">
+                                <KanbanBoard
+                                    tasks={tasks}
+                                    projectId={project.id}
+                                    onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+                                />
+                            </div>
+                            {/* Fallback list view on mobile */}
+                            <div className="md:hidden space-y-4">
+                                <p className="text-xs text-muted-foreground text-center py-2">
+                                    Kanban view is available on larger screens
+                                </p>
+                                <div className="grid gap-4">
+                                    {tasks.map((task) => (
+                                        <TaskCard
+                                            key={task.id}
+                                            task={task}
+                                            onClick={() => setSelectedTaskId(task.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </>
                     ) : viewMode === "gantt" ? (
-                        <GanttChart
-                            tasks={tasks}
-                            onTaskClick={(taskId) => setSelectedTaskId(taskId)}
-                        />
+                        <>
+                            {/* Gantt only visible on md+ screens */}
+                            <div className="hidden md:block">
+                                <GanttChart
+                                    tasks={tasks}
+                                    onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+                                />
+                            </div>
+                            {/* Fallback list view on mobile */}
+                            <div className="md:hidden space-y-4">
+                                <p className="text-xs text-muted-foreground text-center py-2">
+                                    Gantt view is available on larger screens
+                                </p>
+                                <div className="grid gap-4">
+                                    {tasks.map((task) => (
+                                        <TaskCard
+                                            key={task.id}
+                                            task={task}
+                                            onClick={() => setSelectedTaskId(task.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </>
                     ) : (
                         <>
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

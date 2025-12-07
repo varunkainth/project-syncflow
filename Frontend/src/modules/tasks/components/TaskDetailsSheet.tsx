@@ -30,7 +30,7 @@ import { TimeTracker } from "./TimeTracker";
 import { LabelSelector } from "./LabelSelector";
 import { DependencySelector } from "./DependencySelector";
 import { api } from "@/lib/api";
-import type { Comment, Attachment } from "../schema";
+import type { Comment } from "../schema";
 
 interface TaskDetailsSheetProps {
     taskId: string | null;

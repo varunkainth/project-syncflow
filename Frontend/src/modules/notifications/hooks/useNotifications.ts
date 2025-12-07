@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { encryptPayload, decryptPayload } from "@/utils/encryption";
+import { decryptPayload } from "@/utils/encryption";
 
 export interface Notification {
     id: string;

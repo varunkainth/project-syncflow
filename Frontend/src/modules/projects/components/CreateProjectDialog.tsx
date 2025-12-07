@@ -23,7 +23,6 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; // Assuming we have this, if not I'll use Input or create it
 import { useCreateProject } from "../hooks/useProjects";
 import { createProjectSchema, type CreateProjectFormValues } from "../schema";
 

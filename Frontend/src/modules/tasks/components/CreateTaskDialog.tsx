@@ -49,7 +49,7 @@ import { createTaskSchema, type CreateTaskFormValues } from "../schema";
 import { useCreateTask } from "../hooks/useTasks";
 import { useProjectMembers } from "../../projects/hooks/useProjects";
 import { getApiError } from "@/utils/errorHandler";
-import { RecurrenceSelector, type RecurrenceRule } from "./RecurrenceSelector";
+import { RecurrenceSelector, type RecurrenceValue } from "./RecurrenceSelector";
 
 interface CreateTaskDialogProps {
     projectId: string;
@@ -58,7 +58,7 @@ interface CreateTaskDialogProps {
 export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
     const [open, setOpen] = useState(false);
     const [assigneeOpen, setAssigneeOpen] = useState(false);
-    const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(null);
+    const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceValue | undefined>(undefined);
     const createTask = useCreateTask(projectId);
     const { data: members = [] } = useProjectMembers(projectId);
 
@@ -89,7 +89,7 @@ export function CreateTaskDialog({ projectId }: CreateTaskDialogProps) {
                 toast.success(recurrenceRule ? "Recurring task created successfully" : "Task created successfully");
                 setOpen(false);
                 form.reset();
-                setRecurrenceRule(null);
+                setRecurrenceRule(undefined);
             },
             onError: (error) => {
                 toast.error(getApiError(error, "create task"));

@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { formatDistanceToNow, isPast, isWithinInterval, addDays } from "date-fns";
-import { CheckCircle2, Clock, AlertCircle, Calendar, Loader2, FolderKanban } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, Calendar, FolderKanban } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useMyTasks } from "../hooks/useTasks";
 import { TaskDetailsSheet } from "../components/TaskDetailsSheet";
@@ -144,8 +142,33 @@ export function TasksPage() {
 
     if (isLoading) {
         return (
-            <div className="flex h-[50vh] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="container py-6 space-y-6">
+                <div className="space-y-2">
+                    <Skeleton className="h-9 w-48" />
+                    <Skeleton className="h-5 w-72" />
+                </div>
+                <div className="grid gap-6 md:grid-cols-2">
+                    {[1, 2, 3, 4].map((i) => (
+                        <Card key={i}>
+                            <CardHeader className="pb-3">
+                                <Skeleton className="h-6 w-32" />
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {[1, 2, 3].map((j) => (
+                                    <div key={j} className="p-4 rounded-md border">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1 space-y-2">
+                                                <Skeleton className="h-5 w-3/4" />
+                                                <Skeleton className="h-4 w-1/2" />
+                                            </div>
+                                            <Skeleton className="h-6 w-20 rounded-full" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             </div>
         );
     }

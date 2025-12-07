@@ -31,4 +31,10 @@ export class UploadService {
             uploadStream.end(buffer);
         });
     }
+
+    async uploadImage(file: File): Promise<string> {
+        const result = await this.uploadFile(file, "antigravity/avatars");
+        return result.url;
+    }
 }
+
