@@ -26,16 +26,16 @@ export const signup = async (c: Context) => {
 
         setCookie(c, "accessToken", data.accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 15, // 15 minutes
             path: "/",
         });
 
         setCookie(c, "refreshToken", data.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 60 * 24 * 7, // 7 days
             path: "/",
         });
@@ -70,16 +70,16 @@ export const login = async (c: Context) => {
 
         setCookie(c, "accessToken", tokenData.accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 15, // 15 minutes
             path: "/",
         });
 
         setCookie(c, "refreshToken", tokenData.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 60 * 24 * 7, // 7 days
             path: "/",
         });
@@ -102,16 +102,16 @@ export const refresh = async (c: Context) => {
 
         setCookie(c, "accessToken", data.accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 15, // 15 minutes
             path: "/",
         });
 
         setCookie(c, "refreshToken", data.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 60 * 24 * 7, // 7 days
             path: "/",
         });
@@ -206,16 +206,16 @@ export const googleCallback = async (c: Context) => {
 
         setCookie(c, "accessToken", tokenData.accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Lax", // Lax required for OAuth cross-origin redirect
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 15, // 15 minutes
             path: "/",
         });
 
         setCookie(c, "refreshToken", tokenData.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Lax", // Lax required for OAuth cross-origin redirect
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 60 * 24 * 7, // 7 days
             path: "/",
         });
@@ -248,16 +248,16 @@ export const githubCallback = async (c: Context) => {
 
         setCookie(c, "accessToken", tokenData.accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Lax", // Lax required for OAuth cross-origin redirect
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 15, // 15 minutes
             path: "/",
         });
 
         setCookie(c, "refreshToken", tokenData.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Lax", // Lax required for OAuth cross-origin redirect
+            secure: true,
+            sameSite: "None",
             maxAge: 60 * 60 * 24 * 7, // 7 days
             path: "/",
         });

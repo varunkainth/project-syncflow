@@ -50,7 +50,7 @@ const { upgradeWebSocket, websocket } = createBunWebSocket<ServerWebSocket<any>>
 console.time("Loading Middleware");
 
 app.use("*", cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://192.168.1.13:5173", "http://192.168.1.13:5174"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://192.168.1.13:5173", "http://192.168.1.13:5174", "https://project-syncflow.vercel.app"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
 }));
@@ -62,7 +62,7 @@ app.use("*", rateLimitMiddleware);
 // CORS Preflight
 
 app.options("*", cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://192.168.1.13:5173", "http://192.168.1.13:5174"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://192.168.1.13:5173", "http://192.168.1.13:5174", "https://project-syncflow.vercel.app"],
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
 }))
