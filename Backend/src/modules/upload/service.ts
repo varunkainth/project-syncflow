@@ -7,7 +7,7 @@ cloudinary.config({
 });
 
 export class UploadService {
-    async uploadFile(file: File, folder: string = "antigravity/uploads"): Promise<{ url: string; filename: string }> {
+    async uploadFile(file: File, folder: string = "syncflow/uploads"): Promise<{ url: string; filename: string }> {
         return new Promise(async (resolve, reject) => {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
@@ -33,7 +33,7 @@ export class UploadService {
     }
 
     async uploadImage(file: File): Promise<string> {
-        const result = await this.uploadFile(file, "antigravity/avatars");
+        const result = await this.uploadFile(file, "syncflow/avatars");
         return result.url;
     }
 }

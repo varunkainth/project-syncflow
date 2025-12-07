@@ -143,7 +143,7 @@ export const generate2fa = async (c: Context) => {
         if (!user) return c.json({ error: "Unauthorized" }, 401);
 
         const secret = await authService.generate2faSecret(user.id);
-        return jsonEncrypted(c, { secret, otpauth: `otpauth://totp/AntiGravity:${user.email}?secret=${secret}&issuer=AntiGravity` });
+        return jsonEncrypted(c, { secret, otpauth: `otpauth://totp/SyncFlow:${user.email}?secret=${secret}&issuer=SyncFlow` });
     } catch (error: any) {
         return c.json({ error: error.message }, 500);
     }

@@ -17,7 +17,7 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
         console.log("------------------------------------------");
 
         const info = await transporter.sendMail({
-            from: `"AntiGravity" <${process.env.EMAIL_USER}>`,
+            from: `"SyncFlow" <${process.env.EMAIL_USER}>`,
             to,
             subject,
             html,

@@ -29,7 +29,7 @@ export class AuthService {
         if (!newUser) throw new Error("Failed to create user");
 
         // Send Welcome Email (don't await to avoid blocking)
-        sendEmail(newUser.email, "Welcome to AntiGravity!", welcomeEmailTemplate(newUser.name || "User")).catch(console.error);
+        sendEmail(newUser.email, "Welcome to SyncFlow!", welcomeEmailTemplate(newUser.name || "User")).catch(console.error);
 
         return newUser;
     }

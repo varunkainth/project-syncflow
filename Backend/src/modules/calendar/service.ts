@@ -21,9 +21,9 @@ export class CalendarService {
         });
 
         const calendar = ical({
-            name: "AntiGravity Tasks",
+            name: "SyncFlow Tasks",
             timezone: "UTC",
-            prodId: { company: "AntiGravity", product: "Task Management" }
+            prodId: { company: "SyncFlow", product: "Task Management" }
         });
 
         for (const task of userTasks) {
@@ -93,7 +93,7 @@ export class CalendarService {
         const calendar = ical({
             name: `Task: ${task.title}`,
             timezone: "UTC",
-            prodId: { company: "AntiGravity", product: "Task Management" }
+            prodId: { company: "SyncFlow", product: "Task Management" }
         });
 
         // Determine event dates
@@ -217,7 +217,7 @@ export class CalendarService {
             // For tasks with due dates, create timed events
             // For tasks without, create all-day events
             const eventBody: any = {
-                summary: `[AntiGravity] ${task.title}`,
+                summary: `[SyncFlow] ${task.title}`,
                 description: [
                     task.description,
                     task.priority ? `Priority: ${task.priority}` : null,

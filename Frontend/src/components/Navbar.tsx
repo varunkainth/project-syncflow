@@ -92,7 +92,7 @@ export function Navbar() {
                     <SheetContent side="left" className="w-72 p-0">
                         <SheetHeader className="p-4 border-b">
                             <SheetTitle className="text-left font-bold text-xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                                AntiGravity
+                                SyncFlow
                             </SheetTitle>
                         </SheetHeader>
                         <nav className="flex flex-col p-4 space-y-1">
@@ -172,7 +172,7 @@ export function Navbar() {
                 {/* Logo - Always visible */}
                 <Link to="/" className="flex items-center mr-4 md:mr-8">
                     <span className="font-bold text-lg sm:text-xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                        AntiGravity
+                        SyncFlow
                     </span>
                 </Link>
 
